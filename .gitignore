@@ -11,7 +11,7 @@
 /[Uu]ser[Ss]ettings/
 
 .DS_Store
-*.meta
+!*.*.meta
 *.asset
 *.wlt
 *_crash*
