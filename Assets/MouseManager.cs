@@ -6,11 +6,12 @@ public class MouseManager : MonoBehaviour
 {
     public GameObject cursor;
     public GridRoads gridRoads;
+    public RoadPreview roadPreview;
     private int[] currPos = new int[]{0,0};
 
     private int[] prevPos = new int[]{0,0};
-    private bool addingRoad = false;
     private bool wasDown = false;
+    private bool addingRoad = false;
     // Start is called before the first frame update
     void Start()
     {
@@ -36,24 +37,39 @@ public class MouseManager : MonoBehaviour
             currPos[0] = (int)(cursor.transform.position.x);
             currPos[1] = (int)(cursor.transform.position.z);
 
-
             // Do something with the object that was hit by the raycast.
         }
 
         if (Input.GetMouseButton(0)) {
-
             if(!wasDown)
             {
                 int type = gridRoads.Get(currPos[0], currPos[1]);
-                addingRoad=(type == 0);
+                if(type == 0) {
+                    addingRoad = true;
+                    roadPreview.x1 = currPos[0];
+                    roadPreview.z1 = currPos[1];
+                    roadPreview.UpdateDestination(currPos[0], currPos[1]);
+                }
+                else
+                {
+                    addingRoad = false;
+                }
             }
             if(addingRoad) {
-                gridRoads.Set(currPos[0], currPos[1],1);
+                if(prevPos[0] != currPos[0] || prevPos[1] != currPos[1]) {
+                    roadPreview.UpdateDestination(currPos[0], currPos[1]);
+                }
             }else {
                 gridRoads.Set(currPos[0], currPos[1],0);
             }
             wasDown = true;
         }else {
+            if(wasDown) {
+                gridRoads.SetPath(roadPreview.path);
+                roadPreview.Clear();
+            }
+            prevPos[0]=10000;
+            prevPos[1]=10000;
             wasDown = false;
         }
 

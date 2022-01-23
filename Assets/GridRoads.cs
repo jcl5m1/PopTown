@@ -9,6 +9,7 @@ public class GridNode {
     public int dist;
     public bool goal;
     public GameObject obj;
+    public bool dirty = false;
     public GridNode(int ix, int iy) {
         this.ix = ix;
         this.iy = iy;
@@ -25,12 +26,16 @@ public class GridRoads : MonoBehaviour
     // Start is called before the first frame update
 
     public GameObject occupiedPrefab;
+    public GameObject straightPrefab;
+    public GameObject turnPrefab;
+    public GameObject teePrefab;
+    public GameObject fourwayPrefab;
     public GameObject vehicle;
     public float roadHeight = 0.01f;
-
     private ArrayList AstarQueue = new ArrayList();
+    private ArrayList dirtyQueue = new ArrayList();
     private ArrayList LastPath;
-
+     public enum RoadType {StraightNS, StraightWE, TurnWS, TurnSE, TurnEN, TurnNW, TeeS, TeeE, TeeN, TeeW, Fourway};
     void Start()
     {
         for(int ix = 0; ix <= 2*radius; ix++) {
@@ -45,8 +50,6 @@ public class GridRoads : MonoBehaviour
         foreach(GridNode node in grid){
             node.dist = -1; 
             node.goal = false;
-            // if(node.obj != null)
-            //     node.obj.GetComponentInChildren<TextMesh>().text = node.dist.ToString();
         }
     }
     public int Get(int x,int y)
@@ -58,6 +61,91 @@ public class GridRoads : MonoBehaviour
         return grid[x+radius,y+radius].type;
     }
 
+    public void SetPath(ArrayList path) 
+    {
+        // populate grid state
+        foreach (int[] coord in path)
+            Set(coord[0], coord[1],1);
+
+        // mark dirtyQueue as dirty
+        foreach(GridNode node in dirtyQueue)
+            node.dirty = true;
+
+        //instatiate objects
+        foreach(GridNode node in dirtyQueue)
+            InstatiatePrefab(node);
+    }
+
+    public GameObject DetermineRoadType(GridNode node)
+    {
+        GridNode[] neighbors = {
+            grid[node.ix+1,node.iy],
+            grid[node.ix-1,node.iy],
+            grid[node.ix,node.iy+1],
+            grid[node.ix,node.iy-1]
+        };
+        int neighborCode = (neighbors[0].type > 0) ? 1 : 0;  //x+1 E
+        neighborCode += (neighbors[1].type > 0) ? 2 : 0; //x-1 W
+        neighborCode += (neighbors[2].type > 0) ? 4 : 0; //y+1 N
+        neighborCode += (neighbors[3].type > 0) ? 8 : 0; //y-1 S
+        int x = node.ix -radius;
+        int y = node.iy -radius;
+        switch(neighborCode)
+        {
+            case 0:
+//                return RoadType.StraightNS;
+                return Instantiate(straightPrefab, new Vector3(x, roadHeight, y), Quaternion.Euler(90,0,0));
+            case 1:
+//                return RoadType.StraightWE;
+                return Instantiate(straightPrefab, new Vector3(x, roadHeight, y), Quaternion.Euler(90,90,0));
+            case 2:
+//                return RoadType.StraightWE;
+                return Instantiate(straightPrefab, new Vector3(x, roadHeight, y), Quaternion.Euler(90,90,0));
+            case 3:
+//                return RoadType.StraightWE;
+                return Instantiate(straightPrefab, new Vector3(x, roadHeight, y), Quaternion.Euler(90,90,0));
+            case 4:
+//                return RoadType.StraightNS;
+                return Instantiate(straightPrefab, new Vector3(x, roadHeight, y), Quaternion.Euler(90,0,0));
+            case 5:
+//                return RoadType.TurnEN;
+                return Instantiate(turnPrefab, new Vector3(x, roadHeight, y), Quaternion.Euler(90,180,0));
+            case 6:
+//                return RoadType.TurnNW;
+                return Instantiate(turnPrefab, new Vector3(x, roadHeight, y), Quaternion.Euler(90,90,0));
+            case 7:
+//                return RoadType.TeeN;
+                return Instantiate(teePrefab, new Vector3(x, roadHeight, y), Quaternion.Euler(90,90,0));
+            case 8:
+//                return RoadType.StraightNS;
+                return Instantiate(straightPrefab, new Vector3(x, roadHeight, y), Quaternion.Euler(90,0,0));
+            case 9:
+//                return RoadType.TurnSE;
+                return Instantiate(turnPrefab, new Vector3(x, roadHeight, y), Quaternion.Euler(90,-90,0));
+            case 10:
+//                return RoadType.TurnWS;
+                return Instantiate(turnPrefab, new Vector3(x, roadHeight, y), Quaternion.Euler(90,0,0));
+            case 11:
+//                return RoadType.TeeS;
+                return Instantiate(teePrefab, new Vector3(x, roadHeight, y), Quaternion.Euler(90,-90,0));
+            case 12:
+//                return RoadType.StraightNS;
+                return Instantiate(straightPrefab, new Vector3(x, roadHeight, y), Quaternion.Euler(90,0,0));
+            case 13:
+//                return RoadType.TeeE;
+                return Instantiate(teePrefab, new Vector3(x, roadHeight, y), Quaternion.Euler(90,180,0));
+            case 14:
+//                return RoadType.TeeW;
+                return Instantiate(teePrefab, new Vector3(x, roadHeight, y), Quaternion.Euler(90,0,0));
+            case 15:
+//                return RoadType.Fourway;
+                return Instantiate(fourwayPrefab, new Vector3(x, roadHeight, y), Quaternion.Euler(90,0,0));
+            default:
+//                return RoadType.StraightNS;
+                return Instantiate(straightPrefab, new Vector3(x, roadHeight, y), Quaternion.Euler(90,0,0));
+        }
+    }
+
     public void Set(int x,int y,int type)
     {
         if(x < -radius || x > radius)
@@ -65,25 +153,46 @@ public class GridRoads : MonoBehaviour
         if(y < -radius || y > radius)
             return;
 
-        int oldValue = grid[x+radius,y+radius].type;
-        if(oldValue != type)
-        {
-            int ix = x+radius;
-            int iy = y+radius;
+        int ix = x+radius;
+        int iy = y+radius;
 
-            GridNode node = grid[ix, iy];
-            node.type = type;
-            if(node.type == 1)
-            {
-                node.obj = Instantiate(occupiedPrefab, new Vector3(x, roadHeight, y), Quaternion.Euler(90,0,0));
-                node.obj.transform.SetParent(transform);
-            }
-            if(node.type == 0)
-            {
-                if(node.obj != null)
-                    GameObject.Destroy(node.obj);
-            }
+        GridNode node = grid[ix, iy];
+        node.type = type;
+
+        if(node.type == 0)
+        {
+            if(node.obj != null)
+                GameObject.Destroy(node.obj);
         }
+
+        node.dirty = true;
+        dirtyQueue.Add(node);
+        //add neighbors to the dirty queue
+        dirtyQueue.Add(grid[node.ix+1,node.iy]);
+        dirtyQueue.Add(grid[node.ix-1,node.iy]);
+        dirtyQueue.Add(grid[node.ix,node.iy+1]);
+        dirtyQueue.Add(grid[node.ix,node.iy-1]);
+    }
+
+    public void InstatiatePrefab(GridNode node)
+    {
+        if(!node.dirty)
+            return;
+
+        if(node.type == 1)
+        {
+            if(node.obj != null)
+                GameObject.Destroy(node.obj);
+            node.obj = DetermineRoadType(node);            
+            node.obj.transform.SetParent(transform);
+            // node.obj.GetComponent<RoadSection>().InitRoads();
+        }
+        if(node.type == 0)
+        {
+            if(node.obj != null)
+                GameObject.Destroy(node.obj);
+        }
+        node.dirty = false;
     }
 
     private int AStarIncrementNode(int ix, int iy)
@@ -92,7 +201,6 @@ public class GridRoads : MonoBehaviour
         // empty node
         if(node.type == 0)
             return -1;
-//        node.obj.GetComponentInChildren<TextMesh>().text = node.dist.ToString();
 
         //Debug.Log(System.String.Format("ASInc ({0},{1}):dist={2} goal={3}", ix-radius, iy-radius, node.dist, node.goal));
 
@@ -121,7 +229,6 @@ public class GridRoads : MonoBehaviour
 
     public ArrayList RecoverReversePath(int ix, int iy) 
     {
-
         // add the node
         ArrayList path = new ArrayList();
 
@@ -193,6 +300,11 @@ public class GridRoads : MonoBehaviour
         //Debug.Log("No path to Goal found");
         LastPath = null;
         return null;       
+    }
+
+    void ConvertToRoadSegments() 
+    {
+
     }
 
     // Update is called once per frame
