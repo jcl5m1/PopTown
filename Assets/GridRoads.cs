@@ -352,7 +352,6 @@ public class GridRoads : MonoBehaviour
         grid[ix1,iy1].dist = 0;
         grid[ix2,iy2].goal = true;
         AstarQueue.Add(new int[]{ix1,iy1});
-        bool foundPath = false;
         while(AstarQueue.Count > 0) 
         {
             int[] coord =  (int[])AstarQueue[0];

@@ -27,11 +27,13 @@ public class FollowPath : MonoBehaviour
     public void SetPath(ArrayList edgeList, bool forward) {
         if(forward) 
         {
+            this.forwardPts = EdgeSequenceToPointSequence(edgeList,speed/30);
             if(edgeList == null)
                 transform.gameObject.GetComponent<Renderer>().enabled = false;
-            else
+            else {
+                SetCarPosition((Vector3)this.forwardPts[0]);
                 transform.gameObject.GetComponent<Renderer>().enabled = true;
-            this.forwardPts = EdgeSequenceToPointSequence(edgeList,speed/30);
+            }       
         }
         else
             this.reversePts = EdgeSequenceToPointSequence(edgeList,speed/30);
@@ -85,6 +87,16 @@ public class FollowPath : MonoBehaviour
         return stepPoints;
     }
 
+    void SetCarPosition(Vector3 pt) {
+        frontAxle = pt;
+        Vector3 vehicleDir = rearAxle - frontAxle;
+        rearAxle = frontAxle + wheelBase*vehicleDir/vehicleDir.magnitude;
+
+        //position object to align with axle positions
+        transform.position = (frontAxle+rearAxle)/2;
+        transform.rotation = Quaternion.Euler(0,Mathf.Atan2(vehicleDir.x,vehicleDir.z)*Mathf.Rad2Deg,0);
+    }
+
     // Update is called once per frame
     void Update()
     {
@@ -113,7 +125,7 @@ public class FollowPath : MonoBehaviour
 
         if(forwardDirection)
         {
-            frontAxle = (Vector3)forwardPts[positionIdx];
+            SetCarPosition((Vector3)forwardPts[positionIdx]);
             positionIdx += 1;
             if(positionIdx >= forwardPts.Count)
             {
@@ -123,7 +135,7 @@ public class FollowPath : MonoBehaviour
         }
         else
         {
-            frontAxle = (Vector3)reversePts[positionIdx];
+            SetCarPosition((Vector3)reversePts[positionIdx]);
             positionIdx += 1;
             if(positionIdx >= reversePts.Count)
             {
@@ -132,11 +144,5 @@ public class FollowPath : MonoBehaviour
             }
         }
 
-        Vector3 vehicleDir = rearAxle - frontAxle;
-        rearAxle = frontAxle + wheelBase*vehicleDir/vehicleDir.magnitude;
-
-        //position object to align with axle positions
-        transform.position = (frontAxle+rearAxle)/2;
-        transform.rotation = Quaternion.Euler(0,Mathf.Atan2(vehicleDir.x,vehicleDir.z)*Mathf.Rad2Deg,0);
     }
 }
