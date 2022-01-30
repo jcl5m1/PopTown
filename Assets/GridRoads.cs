@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 public class GridNode {
     public int ix;
@@ -34,7 +35,10 @@ public class GridRoads : MonoBehaviour
     public float roadHeight = 0.01f;
     private ArrayList AstarQueue = new ArrayList();
     private ArrayList dirtyQueue = new ArrayList();
-    private ArrayList LastPath;
+    private ArrayList nodeSequence;
+    private ArrayList interfaceSequence = new ArrayList();
+    private ArrayList forwardEdgeSequence = new ArrayList();
+    private ArrayList pointSequence;
      public enum RoadType {StraightNS, StraightWE, TurnWS, TurnSE, TurnEN, TurnNW, TeeS, TeeE, TeeN, TeeW, Fourway};
     void Start()
     {
@@ -227,14 +231,14 @@ public class GridRoads : MonoBehaviour
         return -1;
     }
 
-    public ArrayList RecoverReversePath(int ix, int iy) 
+    public ArrayList RecoverReverseNodeSequence(int ix, int iy) 
     {
         // add the node
         ArrayList path = new ArrayList();
 
         GridNode node = grid[ix,iy];
         while(true) {
-            path.Add(new int[]{node.ix-radius,node.iy-radius});
+            path.Add(node);
             //back home
             if(node.dist == 0)
                 break;
@@ -272,6 +276,59 @@ public class GridRoads : MonoBehaviour
         return path;
     }
 
+    public ArrayList ConvertNodeSequenceToEdgeSequence(ArrayList nodeList)
+    {
+        this.interfaceSequence.Clear();
+        RoadSection previousSection = null;
+        foreach(GridNode node in nodeList)
+        {
+            RoadSection section = node.obj.GetComponent<RoadSection>();
+            if(previousSection != null)
+            {
+                this.interfaceSequence.Add(previousSection.GetMatchingInterface(section));
+            }
+            previousSection = section;
+        }
+
+        RoadInterface prevRi = null;
+        ArrayList edgeList = new ArrayList();
+        foreach(RoadInterface ri in this.interfaceSequence)
+        {
+            if(prevRi != null)
+            {
+                // Debug.Log(String.Format("PrevRI position: {0}  ********",prevRi.position));
+                // Debug.Log(String.Format("RI position: {0}",ri.position));
+                //find the edge that connects previous interface to current interface
+                bool found = false;
+                foreach(RoadEdge e in ri.node1.edges)
+                {
+                    // Debug.Log(String.Format("Node 1 Edge end parent: {0}",e.end.parent.position));
+                    // Debug.Log(String.Format("Node 1 Edge start parent: {0}",e.start.parent.position));
+                    if( (e.start.parent.position - prevRi.position).magnitude < 0.1) {
+                        edgeList.Add(e);
+                        found = true;
+                        break;
+                    }
+                }
+                if(found)
+                    continue;
+                foreach(RoadEdge e in ri.node2.edges)
+                {
+                    // Debug.Log(String.Format("Node 2 Edge end parent: {0}",e.end.parent.position));
+                    // Debug.Log(String.Format("Node 2 Edge start parent: {0}",e.start.parent.position));
+                    if( (e.start.parent.position - prevRi.position).magnitude < 0.1) {
+                        edgeList.Add(e);
+                        found = true;
+                        break;
+                    }
+                }
+            }
+
+            prevRi = ri;
+        }
+        return edgeList;
+    }
+
     public ArrayList FindPath(int x1, int y1, int x2, int y2) 
     {
         ResetGrid();
@@ -292,14 +349,18 @@ public class GridRoads : MonoBehaviour
             if(dist > 0)
             {
                // Debug.Log(System.String.Format("Goal found in {0} steps", dist));
-                LastPath = RecoverReversePath(coord[0], coord[1]);
-                vehicle.GetComponent<FollowPath>().SetPath(LastPath);
-                return LastPath;
+                nodeSequence = RecoverReverseNodeSequence(coord[0], coord[1]);
+                ArrayList forwardEdgeSequence = ConvertNodeSequenceToEdgeSequence(nodeSequence);
+                nodeSequence.Reverse();
+                ArrayList reverseEdgeSequence = ConvertNodeSequenceToEdgeSequence(nodeSequence);
+                vehicle.GetComponent<FollowPath>().SetPath(forwardEdgeSequence, true);
+                vehicle.GetComponent<FollowPath>().SetPath(reverseEdgeSequence, false);
+                return nodeSequence;
             }
         }
         //Debug.Log("No path to Goal found");
-        LastPath = null;
-        return null;       
+        nodeSequence = null;
+        return null;
     }
 
     void ConvertToRoadSegments() 
@@ -310,14 +371,57 @@ public class GridRoads : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(LastPath != null) {
-            int[] last = null;
-            foreach (int[] coord in LastPath) {
-                if(last != null) {
-                    Debug.DrawLine(new Vector3(last[0], 0.5f, last[1]), new Vector3(coord[0], 0.5f, coord[1]), Color.green);
+        // if(nodeSequence != null) {
+        //     GridNode last = null;
+        //     Vector3 offset = new Vector3(0,0.5f,0);
+        //     bool first = true;
+        //     foreach (GridNode node in nodeSequence) {
+        //         if(first)
+        //         {
+        //             Util.DebugDrawX(node.obj.transform.position,0.1f,Color.red);
+        //             first = false;
+        //         }
+        //         if(last != null) {
+        //             Debug.DrawLine( node.obj.transform.position + offset, 
+        //                             last.obj.transform.position + offset,
+        //                             Color.red);
+        //         }
+        //         last = node;
+        //     }
+        // }
+
+        if(interfaceSequence != null) {
+            Vector3 offset = new Vector3(0,0.25f,0);
+            Vector3 prev = Vector3.zero;
+            bool first = true;
+            foreach (RoadInterface ri in interfaceSequence) {
+                if(first)
+                {
+                    Util.DebugDrawX(ri.position,0.1f,Color.red);
+                    first = false;
                 }
-                last = coord;
+                if(prev != Vector3.zero)
+                {
+                    Debug.DrawLine( ri.position + offset, 
+                                    prev,
+                                    Color.red);
+                }
+                prev = ri.position + offset;
             }
         }
+
+        // if(forwardEdgeSequence != null) {
+        //     Vector3 offset = new Vector3(0,0.25f,0);
+        //     Vector3 prev = Vector3.zero;
+        //     bool first = true;
+        //     foreach (RoadEdge e in forwardEdgeSequence) {
+        //         if(first)
+        //         {
+        //             Util.DebugDrawX(e.start.position,0.1f,Color.green);
+        //             first = false;
+        //         }
+        //         e.DebugDraw(Color.green);
+        //     }
+        // }
     }
 }

@@ -37,11 +37,13 @@ public class RoadNode
     public Vector3 position;
     public Quaternion rotation;
     public ArrayList edges = new ArrayList();
+    public RoadInterface parent;
     public int value;
-    public RoadNode(Vector3 position, Quaternion rotation)
+    public RoadNode(Vector3 position, Quaternion rotation, RoadInterface parent)
     {
         this.position = position;
         this.rotation = rotation;
+        this.parent = parent;
         value = 0;
     }
 
@@ -148,19 +150,14 @@ public class RoadInterface
         this.rotation = rotation;
         Vector3 offsetDir = new Vector3(laneOffset, 0,0);
 
-        node1 = new RoadNode(position+rotation*offsetDir, rotation);
-        node2 = new RoadNode(position-rotation*offsetDir, rotation);    
+        node1 = new RoadNode(position+rotation*offsetDir, rotation, this);
+        node2 = new RoadNode(position-rotation*offsetDir, rotation, this);    
     }
 
     public void DebugDraw()
     {
         node1.DebugDraw(rotation, Color.green, true);
         node2.DebugDraw(rotation, Color.red, false);
-        Debug.DrawLine(
-            position,
-            position + rotation*(new Vector3(0,0.25f,0)),
-            Color.green
-        );
     }
 }
 
@@ -177,6 +174,20 @@ public class RoadSection : MonoBehaviour
     void Start()
     {
         InitRoads();
+    }
+
+    public RoadInterface GetMatchingInterface(RoadSection rs)
+    {
+        foreach(RoadInterface ri1 in rs.interfaces)
+        {
+            foreach(RoadInterface ri2 in interfaces)
+            {
+                float dist = (ri1.position - ri2.position).magnitude;
+                if(dist < 0.1) //just distance check?
+                    return ri2;
+            }
+        }
+        return null;
     }
 
     public void InitRoads() 
@@ -391,10 +402,10 @@ public class RoadSection : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(debugDraw)
-        {
-            foreach(RoadInterface ri in interfaces)
-                ri.DebugDraw();
-        }
+        // if(debugDraw)
+        // {
+        //     foreach(RoadInterface ri in interfaces)
+        //         ri.DebugDraw();
+        // }
     }
 }

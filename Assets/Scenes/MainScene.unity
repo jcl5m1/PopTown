@@ -496,11 +496,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6eb6719e8c3794972a133e3c7e23a1d2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 2
+  speed: 3
   startTime: 0
   pathIndex: 0
-  wheelBase: 0.4
+  wheelBase: 0.1
+  debug: 0
   forwardDirection: 1
+  positionIdx: 0
   frontAxle: {x: 0, y: 0, z: 0}
   rearAxle: {x: 0, y: 0, z: 0}
 --- !u!1 &1151011544
@@ -847,6 +849,21 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2304974776523894084, guid: 9a04a435ea8e94a668f80bf78b9953a1,
         type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2304974776523894084, guid: 9a04a435ea8e94a668f80bf78b9953a1,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.15
+      objectReference: {fileID: 0}
+    - target: {fileID: 2304974776523894084, guid: 9a04a435ea8e94a668f80bf78b9953a1,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 2304974776523894084, guid: 9a04a435ea8e94a668f80bf78b9953a1,
+        type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.19
       objectReference: {fileID: 0}
@@ -954,7 +971,7 @@ PrefabInstance:
     - target: {fileID: 8945322479822036460, guid: efe15c1ee0e134be2a74db88b008efcf,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8945322479822036460, guid: efe15c1ee0e134be2a74db88b008efcf,
         type: 3}

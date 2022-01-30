@@ -4,80 +4,126 @@ using UnityEngine;
 
 public class FollowPath : MonoBehaviour
 {
-
-    public ArrayList path;
+    public ArrayList forwardPts;
+    public ArrayList reversePts;
     public float speed;
     public float startTime;
     public int pathIndex;
     public float wheelBase;
+    public bool debug;
 
     public bool forwardDirection = false;
-    private bool previousDirection = false;
+    public int positionIdx = 0;
     public Vector3 frontAxle = new Vector3();
     public Vector3 rearAxle = new Vector3();
 
-    private float laneOffset = 0.25f;
+//    private float laneOffset = 0.25f;
     // Start is called before the first frame update
     void Start()
     {
         pathIndex = 0;
     }
 
-    public void SetPath(ArrayList path) {
-        this.path = path;
+    public void SetPath(ArrayList edgeList, bool forward) {
+        if(forward)
+            this.forwardPts = EdgeSequenceToPointSequence(edgeList,speed/30);
+        else
+            this.reversePts = EdgeSequenceToPointSequence(edgeList,speed/30);
         startTime = Time.realtimeSinceStartup;
+        positionIdx = 0;
     }
+
+    public ArrayList EdgeSequenceToPointSequence(ArrayList edgeList, float stepDist)
+    {
+        ArrayList edgePoints = new ArrayList();
+        foreach(RoadEdge e in edgeList)
+        {
+            Vector3[] points = e.GetPoints();
+            foreach(Vector3 p in points)
+            {
+                edgePoints.Add(p);
+            }
+        }
+
+        //resample using stepDist
+        ArrayList stepPoints = new ArrayList();
+        Vector3 prevPt = Vector3.zero;
+        Vector3 currPt = Vector3.zero;
+        foreach(Vector3 nextPt in edgePoints)
+        {
+            //first point
+            if(prevPt == Vector3.zero) 
+            {
+                stepPoints.Add(nextPt);
+                prevPt = nextPt;
+                continue;
+            }
+            float nextDist = (prevPt - nextPt).magnitude;
+            //too close, proceed to next point
+            if(nextDist < stepDist)
+                continue;
+            
+            //too far, interpolate
+            while(nextDist >= stepDist)
+            {
+                Vector3 tempPt = Vector3.Lerp(prevPt, nextPt, stepDist/nextDist);
+                stepPoints.Add(tempPt);
+                prevPt = tempPt;
+                nextDist = (prevPt - nextPt).magnitude;
+            }
+        }
+
+        return stepPoints;
+    }
+
     // Update is called once per frame
     void Update()
     {
-        if(path != null) 
+        if(forwardPts == null)
+            return;
+        if(reversePts == null)
+            return;
+
+        if(debug)
         {
-            previousDirection = forwardDirection;
-            forwardDirection = (int)((speed*Time.realtimeSinceStartup-startTime)/(path.Count-1))%2==0;
-            if(previousDirection != forwardDirection)
+            if(forwardPts != null) 
             {
-                rearAxle = frontAxle + new Vector3(1,0,0);
+                foreach(Vector3 p in forwardPts)
+                    Util.DebugDrawX(p,0.1f,Color.green);
             }
-
-            if(forwardDirection)
+            if(reversePts != null) 
             {
-                float dt = (speed*Time.realtimeSinceStartup-startTime)%(path.Count-1);
-                int idx1 = (int)Mathf.Floor(dt);
-                int idx2 = (int)Mathf.Ceil(dt);
-                float y = transform.position.y;
-                int[] c1 = (int[])path[idx1];
-                int[] c2 = (int[])path[idx2];
-                Vector3 a = new Vector3(c1[0],y,c1[1]);
-                Vector3 b = new Vector3(c2[0],y,c2[1]);
-                Vector3 roadDir = b-a;
-                Vector3 offset = laneOffset*(Quaternion.Euler(0, 90, 0) * roadDir);
-                
-                frontAxle = Vector3.Lerp(a+offset,b+offset,dt-idx1);
-                Vector3 dir = rearAxle - frontAxle;
-                rearAxle = frontAxle + wheelBase*dir/dir.magnitude;
-
-                transform.position = (frontAxle+rearAxle)/2;
-                transform.rotation = Quaternion.Euler(0,Mathf.Atan2(dir.x,dir.z)*Mathf.Rad2Deg,0);
-            }
-            else
-            {
-                float dt = (speed*Time.realtimeSinceStartup-startTime)%(path.Count-1);
-                int idx1 = (int)Mathf.Floor(dt);
-                int idx2 = (int)Mathf.Ceil(dt);
-                float y = transform.position.y;
-                int[] c1 = (int[])path[path.Count - idx1-1];
-                int[] c2 = (int[])path[path.Count - idx2-1];
-                Vector3 a = new Vector3(c1[0],y,c1[1]);
-                Vector3 b = new Vector3(c2[0],y,c2[1]);
-                Vector3 roadDir = b-a;
-                Vector3 offset = laneOffset*(Quaternion.Euler(0, 90, 0) * roadDir);
-                frontAxle = Vector3.Lerp(a+offset,b+offset,dt-idx1);
-                Vector3 vehicleDir = rearAxle - frontAxle;
-                rearAxle = frontAxle + wheelBase*vehicleDir/vehicleDir.magnitude;
-
-                transform.position = (frontAxle+rearAxle)/2;
-                transform.rotation = Quaternion.Euler(0,  Mathf.Atan2(vehicleDir.x,vehicleDir.z)*Mathf.Rad2Deg,0);
+                foreach(Vector3 p in reversePts)
+                    Util.DebugDrawX(p,0.1f,Color.red);
             }
         }
+
+        if(forwardDirection)
+        {
+            frontAxle = (Vector3)forwardPts[positionIdx];
+            positionIdx += 1;
+            if(positionIdx >= forwardPts.Count)
+            {
+                positionIdx = 0;
+                forwardDirection = false;
+            }
+        }
+        else
+        {
+            frontAxle = (Vector3)reversePts[positionIdx];
+            positionIdx += 1;
+            if(positionIdx >= reversePts.Count)
+            {
+                positionIdx = 0;
+                forwardDirection = true;
+            }
+        }
+
+        Vector3 vehicleDir = rearAxle - frontAxle;
+        rearAxle = frontAxle + wheelBase*vehicleDir/vehicleDir.magnitude;
+
+        //position object to align with axle positions
+        transform.position = (frontAxle+rearAxle)/2;
+        transform.rotation = Quaternion.Euler(0,Mathf.Atan2(vehicleDir.x,vehicleDir.z)*Mathf.Rad2Deg,0);
     }
 }
