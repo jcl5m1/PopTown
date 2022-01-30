@@ -163,7 +163,7 @@ public class RoadInterface
 
 public class RoadSection : MonoBehaviour
 {
-    public enum Type {Straight, Turn, Tee, Fourway};
+    public enum Type {Straight, Turn, Tee, Fourway, Fourstop};
 
     public Type type;
 
@@ -214,7 +214,7 @@ public class RoadSection : MonoBehaviour
         }
 
         if(type == Type.Turn) {
-            //create a left hand turn section of road with 2 bezier curves
+            //create a left hand turn section
             interfaces.Add(new RoadInterface(transform.position - transform.rotation*(new Vector3(0,0.5f,0.0f)),transform.rotation, 0.25f));
             interfaces.Add(new RoadInterface(transform.position - transform.rotation*(new Vector3(0.5f,0,0)),transform.rotation*Quaternion.Euler(0,0,-90), 0.25f));
 
@@ -241,7 +241,7 @@ public class RoadSection : MonoBehaviour
 
 
         if(type == Type.Tee) {
-            //create a left hand turn section of road with 2 bezier curves
+            //create Tee
             interfaces.Add(new RoadInterface(transform.position - transform.rotation*(new Vector3(0,0.5f,0.0f)),transform.rotation, 0.25f));
             interfaces.Add(new RoadInterface(transform.position - transform.rotation*(new Vector3(0.5f,0,0)),transform.rotation*Quaternion.Euler(0,0,-90), 0.25f));
             interfaces.Add(new RoadInterface(transform.position + transform.rotation*(new Vector3(0,0.5f,0.0f)),transform.rotation*Quaternion.Euler(0,0,180), 0.25f));
@@ -296,7 +296,7 @@ public class RoadSection : MonoBehaviour
         }
 
         if(type == Type.Fourway) {
-            //create a left hand turn section of road with 2 bezier curves
+            //create 4 way with fully connected edges
             interfaces.Add(new RoadInterface(transform.position - transform.rotation*(new Vector3(0,0.5f,0.0f)),transform.rotation, 0.25f));
             interfaces.Add(new RoadInterface(transform.position - transform.rotation*(new Vector3(0.5f,0,0)),transform.rotation*Quaternion.Euler(0,0,-90), 0.25f));
             interfaces.Add(new RoadInterface(transform.position + transform.rotation*(new Vector3(0,0.5f,0.0f)),transform.rotation*Quaternion.Euler(0,0,180), 0.25f));
@@ -397,15 +397,23 @@ public class RoadSection : MonoBehaviour
             ri1.node1.edges.Add(edge12);
             ri4.node2.edges.Add(edge12);
         }
+
+        if(type == Type.Fourstop) {
+            //create a 4 way, but no connecting edges
+            interfaces.Add(new RoadInterface(transform.position - transform.rotation*(new Vector3(0,0.5f,0.0f)),transform.rotation, 0.25f));
+            interfaces.Add(new RoadInterface(transform.position - transform.rotation*(new Vector3(0.5f,0,0)),transform.rotation*Quaternion.Euler(0,0,-90), 0.25f));
+            interfaces.Add(new RoadInterface(transform.position + transform.rotation*(new Vector3(0,0.5f,0.0f)),transform.rotation*Quaternion.Euler(0,0,180), 0.25f));
+            interfaces.Add(new RoadInterface(transform.position + transform.rotation*(new Vector3(0.5f,0,0)),transform.rotation*Quaternion.Euler(0,0, 90), 0.25f));
+        }
     }
 
     // Update is called once per frame
     void Update()
     {
-        // if(debugDraw)
-        // {
-        //     foreach(RoadInterface ri in interfaces)
-        //         ri.DebugDraw();
-        // }
+        if(debugDraw)
+        {
+            foreach(RoadInterface ri in interfaces)
+                ri.DebugDraw();
+        }
     }
 }

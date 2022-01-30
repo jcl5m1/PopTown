@@ -33,7 +33,7 @@ public class GridRoads : MonoBehaviour
     public GridNode[,] grid = new GridNode[2*radius+1, 2*radius+1];
     // Start is called before the first frame update
 
-    public GameObject occupiedPrefab;
+    public GameObject fourstopPrefab;
     public GameObject straightPrefab;
     public GameObject turnPrefab;
     public GameObject teePrefab;
@@ -236,7 +236,7 @@ public class GridRoads : MonoBehaviour
                 // TO DO, should NOT allow drive through
                 int x = node.ix -radius;
                 int y = node.iy -radius;
-                node.obj = Instantiate(fourwayPrefab, new Vector3(x, roadHeight, y), Quaternion.Euler(90,0,0));
+                node.obj = Instantiate(fourstopPrefab, new Vector3(x, roadHeight, y), Quaternion.Euler(90,0,0));
                 node.obj.transform.SetParent(transform);
             }
         }
