@@ -25,16 +25,25 @@ public class FollowPath : MonoBehaviour
     }
 
     public void SetPath(ArrayList edgeList, bool forward) {
-        if(forward)
+        if(forward) 
+        {
+            if(edgeList == null)
+                transform.gameObject.GetComponent<Renderer>().enabled = false;
+            else
+                transform.gameObject.GetComponent<Renderer>().enabled = true;
             this.forwardPts = EdgeSequenceToPointSequence(edgeList,speed/30);
+        }
         else
             this.reversePts = EdgeSequenceToPointSequence(edgeList,speed/30);
+
         startTime = Time.realtimeSinceStartup;
         positionIdx = 0;
     }
 
     public ArrayList EdgeSequenceToPointSequence(ArrayList edgeList, float stepDist)
     {
+        if(edgeList == null)
+            return null;
         ArrayList edgePoints = new ArrayList();
         foreach(RoadEdge e in edgeList)
         {
@@ -79,10 +88,14 @@ public class FollowPath : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(forwardPts == null)
+        if((forwardPts == null)||(reversePts == null))
+        {
             return;
-        if(reversePts == null)
+        }
+        if((forwardPts.Count == 0)||(reversePts.Count == 0))
+        {
             return;
+        }
 
         if(debug)
         {
