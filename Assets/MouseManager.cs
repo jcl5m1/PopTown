@@ -74,7 +74,9 @@ public class MouseManager : MonoBehaviour
         }
 
         if (Input.GetKeyDown("space"))
-            gridRoads.FindPath(0,5,0,-2);
+        {
+            gridRoads.FindPath(0,5,0,0);
+        }
         if (Input.GetKeyDown("r"))
             gridRoads.ResetGrid();
     }
