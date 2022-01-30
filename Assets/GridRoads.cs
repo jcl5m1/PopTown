@@ -99,7 +99,13 @@ public class GridRoads : MonoBehaviour
         // mark dirtyQueue as dirty
         foreach(GridNode node in dirtyQueue)
             node.dirty = true;
+        
+        InstantiateDirtyQueue();
 
+    }
+
+    public void InstantiateDirtyQueue()
+    {
         //instatiate objects
         foreach(GridNode node in dirtyQueue)
             InstatiatePrefab(node);
@@ -267,6 +273,14 @@ public class GridRoads : MonoBehaviour
         {
             if(neighbors[i].type == GridNode.NodeType.Empty)
                 continue;
+
+            //if neighbor is a non-building goal
+            if(neighbors[i].type == GridNode.NodeType.Building)
+            {
+                if(!neighbors[i].goal)
+                    continue;
+            }
+
             if(neighbors[i].dist == -1){
                 neighbors[i].dist = node.dist+1;
                 AstarQueue.Add(new int[]{neighbors[i].ix,neighbors[i].iy});
@@ -433,6 +447,7 @@ public class GridRoads : MonoBehaviour
         }
         // no path found, clear.
         //Debug.Log("No path to Goal found");
+        interfaceSequence.Clear();
         vehicle.GetComponent<FollowPath>().SetPath(null, true);
         vehicle.GetComponent<FollowPath>().SetPath(null, false);
         nodeSequence.Clear();

@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 1253525026721519539}
   - component: {fileID: 1253525026721519532}
   - component: {fileID: 1253525026721519533}
-  - component: {fileID: 1253525026721519534}
+  - component: {fileID: 180271089}
   m_Layer: 0
   m_Name: Store
   m_TagString: Untagged
@@ -32,7 +32,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 0
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &1253525026721519532
 MeshFilter:
@@ -84,17 +84,17 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!136 &1253525026721519534
-CapsuleCollider:
+--- !u!114 &180271089
+MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1253525026721519535}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
   m_Enabled: 1
-  m_Radius: 0.5000001
-  m_Height: 2
-  m_Direction: 1
-  m_Center: {x: 0.000000059604645, y: 0, z: -0.00000008940697}
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e533923297b94cdd830a0bf7dd67cd1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gridRoads: {fileID: 0}
+  type: 2
