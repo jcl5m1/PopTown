@@ -6,15 +6,22 @@ using System;
 public class GridNode {
     public int ix;
     public int iy;
-    public int type;
+    public NodeType type;
     public int dist;
     public bool goal;
     public GameObject obj;
     public bool dirty = false;
+    public enum NodeType
+        {
+            Empty,
+            Road,
+            Building,
+            Invalid
+        }
     public GridNode(int ix, int iy) {
         this.ix = ix;
         this.iy = iy;
-        type = 0;
+        type = NodeType.Empty;
         dist = -1;
         goal = false;
     }
@@ -40,14 +47,18 @@ public class GridRoads : MonoBehaviour
     private ArrayList interfaceSequence = new ArrayList();
     private ArrayList forwardEdgeSequence = new ArrayList();
     private ArrayList pointSequence;
+
     public enum RoadType {StraightNS, StraightWE, TurnWS, TurnSE, TurnEN, TurnNW, TeeS, TeeE, TeeN, TeeW, Fourway};
-    void Start()
-    {
+
+    void Awake() {
         for(int ix = 0; ix <= 2*radius; ix++) {
             for(int iy = 0; iy <= 2*radius; iy++) {
                 grid[ix,iy] = new GridNode(ix,iy); 
             }
         }
+    }
+    void Start()
+    {
     }
 
     public void ResetGrid() {
@@ -61,26 +72,29 @@ public class GridRoads : MonoBehaviour
     public void ClearGrid() 
     {
         foreach(GridNode node in grid){
-            node.type = 0;
+            node.type = GridNode.NodeType.Empty;
             if(node.obj != null)
                 GameObject.Destroy(node.obj);
         }
         ResetGrid();
     }
-    public int Get(int x,int y)
+    public GridNode.NodeType GetNodeType(int x,int y)
     {
         if(x < -radius || x > radius)
-            return -1;
+            return GridNode.NodeType.Invalid;
         if(y < -radius || y > radius)
-            return -1;
+            return GridNode.NodeType.Invalid;
         return grid[x+radius,y+radius].type;
     }
 
     public void SetPath(ArrayList path) 
     {
         // populate grid state
-        foreach (int[] coord in path)
-            Set(coord[0], coord[1],1);
+        foreach (int[] coord in path) {
+            GridNode.NodeType type = GetNodeType(coord[0], coord[1]);
+            if(type == GridNode.NodeType.Empty)
+                SetNodeType(coord[0], coord[1],GridNode.NodeType.Road);
+        }
 
         // mark dirtyQueue as dirty
         foreach(GridNode node in dirtyQueue)
@@ -99,10 +113,10 @@ public class GridRoads : MonoBehaviour
             grid[node.ix,node.iy+1],
             grid[node.ix,node.iy-1]
         };
-        int neighborCode = (neighbors[0].type > 0) ? 1 : 0;  //x+1 E
-        neighborCode += (neighbors[1].type > 0) ? 2 : 0; //x-1 W
-        neighborCode += (neighbors[2].type > 0) ? 4 : 0; //y+1 N
-        neighborCode += (neighbors[3].type > 0) ? 8 : 0; //y-1 S
+        int neighborCode = (neighbors[0].type > GridNode.NodeType.Empty) ? 1 : 0;  //x+1 E
+        neighborCode += (neighbors[1].type > GridNode.NodeType.Empty) ? 2 : 0; //x-1 W
+        neighborCode += (neighbors[2].type > GridNode.NodeType.Empty) ? 4 : 0; //y+1 N
+        neighborCode += (neighbors[3].type > GridNode.NodeType.Empty) ? 8 : 0; //y-1 S
         int x = node.ix -radius;
         int y = node.iy -radius;
         switch(neighborCode)
@@ -161,7 +175,14 @@ public class GridRoads : MonoBehaviour
         }
     }
 
-    public void Set(int x,int y,int type)
+    public void ClearRoad(int x,int y)
+    {
+        GridNode.NodeType type = GetNodeType(x,y);
+        if(type == GridNode.NodeType.Road)
+            SetNodeType(x,y,GridNode.NodeType.Empty);
+    }
+
+    public void SetNodeType(int x,int y,GridNode.NodeType type)
     {
         if(x < -radius || x > radius)
             return;
@@ -174,7 +195,7 @@ public class GridRoads : MonoBehaviour
         GridNode node = grid[ix, iy];
         node.type = type;
 
-        if(node.type == 0)
+        if(node.type == GridNode.NodeType.Empty)
         {
             if(node.obj != null)
                 GameObject.Destroy(node.obj);
@@ -194,18 +215,30 @@ public class GridRoads : MonoBehaviour
         if(!node.dirty)
             return;
 
-        if(node.type == 1)
+        if(node.type == GridNode.NodeType.Road)
         {
             if(node.obj != null)
                 GameObject.Destroy(node.obj);
             node.obj = DetermineRoadType(node);            
             node.obj.transform.SetParent(transform);
-            // node.obj.GetComponent<RoadSection>().InitRoads();
         }
-        if(node.type == 0)
+        if(node.type == GridNode.NodeType.Empty)
         {
             if(node.obj != null)
                 GameObject.Destroy(node.obj);
+        }
+
+        if(node.type == GridNode.NodeType.Building)
+        {
+            if(node.obj == null)
+            {
+                //building is same as fourway, can be connected on every side
+                // TO DO, should NOT allow drive through
+                int x = node.ix -radius;
+                int y = node.iy -radius;
+                node.obj = Instantiate(fourwayPrefab, new Vector3(x, roadHeight, y), Quaternion.Euler(90,0,0));
+                node.obj.transform.SetParent(transform);
+            }
         }
         node.dirty = false;
     }
@@ -214,7 +247,7 @@ public class GridRoads : MonoBehaviour
     {
         GridNode node = grid[ix,iy];
         // empty node
-        if(node.type == 0)
+        if(node.type == GridNode.NodeType.Empty)
             return -1;
 
         //Debug.Log(System.String.Format("ASInc ({0},{1}):dist={2} goal={3}", ix-radius, iy-radius, node.dist, node.goal));
@@ -232,7 +265,7 @@ public class GridRoads : MonoBehaviour
 
         for(int i = 0; i < neighbors.Length; i++) 
         {
-            if(neighbors[i].type == 0)
+            if(neighbors[i].type == GridNode.NodeType.Empty)
                 continue;
             if(neighbors[i].dist == -1){
                 neighbors[i].dist = node.dist+1;
@@ -268,7 +301,7 @@ public class GridRoads : MonoBehaviour
             {
                 //Debug.Log(System.String.Format("Neighbor({0},{1}) idx={2} dist={3}",neighbors[i].ix -radius, neighbors[i].iy-radius, i,neighbors[i].dist));
                 // not valid node
-                if(neighbors[i].type == 0)
+                if(neighbors[i].type == GridNode.NodeType.Empty)
                     continue;
                 // unvisited node
                 if(neighbors[i].dist < 0)
@@ -404,11 +437,6 @@ public class GridRoads : MonoBehaviour
         vehicle.GetComponent<FollowPath>().SetPath(null, false);
         nodeSequence.Clear();
         return null;
-    }
-
-    void ConvertToRoadSegments() 
-    {
-
     }
 
     // Update is called once per frame

@@ -93,21 +93,26 @@ public class InputManager : MonoBehaviour
                 currPos[1] = (int)(position.z);
 
 //                Debug.Log(touchPosition + " ->  " + currPos[0] + ", " + currPos[1]);
-
             }
 
             if(!wasTouching)
             {
-                int type = gridRoads.Get(currPos[0], currPos[1]);
-                if(type == 0) {
+                GridNode.NodeType type = gridRoads.GetNodeType(currPos[0], currPos[1]);
+                if(type == GridNode.NodeType.Empty) {
                     addingRoad = true;
                     roadPreview.x1 = currPos[0];
                     roadPreview.z1 = currPos[1];
                     roadPreview.UpdateDestination(currPos[0], currPos[1]);
                 }
-                else
+                else if(type == GridNode.NodeType.Road)
                 {
                     addingRoad = false;
+                } else if(type == GridNode.NodeType.Building){
+                    addingRoad = true;
+                    roadPreview.x1 = currPos[0];
+                    roadPreview.z1 = currPos[1];
+                    roadPreview.UpdateDestination(currPos[0], currPos[1]);
+
                 }
             }
 
@@ -116,7 +121,7 @@ public class InputManager : MonoBehaviour
                     roadPreview.UpdateDestination(currPos[0], currPos[1]);
                 }
             }else {
-                gridRoads.Set(currPos[0], currPos[1],0);
+                gridRoads.ClearRoad(currPos[0], currPos[1]);
             }
             wasTouching = true;
         }
