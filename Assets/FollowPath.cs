@@ -29,14 +29,19 @@ public class FollowPath : MonoBehaviour
         {
             this.forwardPts = EdgeSequenceToPointSequence(edgeList,speed/30);
             if(edgeList == null)
+            {
                 transform.gameObject.GetComponent<Renderer>().enabled = false;
-            else {
+            }
+            else 
+            {
                 SetCarPosition((Vector3)this.forwardPts[0]);
                 transform.gameObject.GetComponent<Renderer>().enabled = true;
             }       
         }
         else
+        {
             this.reversePts = EdgeSequenceToPointSequence(edgeList,speed/30);
+        }
 
         startTime = Time.realtimeSinceStartup;
         positionIdx = 0;
@@ -104,6 +109,7 @@ public class FollowPath : MonoBehaviour
         {
             return;
         }
+
         if((forwardPts.Count == 0)||(reversePts.Count == 0))
         {
             return;
@@ -111,16 +117,10 @@ public class FollowPath : MonoBehaviour
 
         if(debug)
         {
-            if(forwardPts != null) 
-            {
-                foreach(Vector3 p in forwardPts)
-                    Util.DebugDrawX(p,0.1f,Color.green);
-            }
-            if(reversePts != null) 
-            {
-                foreach(Vector3 p in reversePts)
-                    Util.DebugDrawX(p,0.1f,Color.red);
-            }
+            foreach(Vector3 p in forwardPts)
+                Util.DebugDrawX(p,0.1f,Color.green);
+            foreach(Vector3 p in reversePts)
+                Util.DebugDrawX(p,0.1f,Color.red);
         }
 
         if(forwardDirection)

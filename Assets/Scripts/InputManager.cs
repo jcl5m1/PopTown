@@ -63,7 +63,9 @@ public class InputManager : MonoBehaviour
     {
         // wait 1 seconds
         yield return new WaitForSeconds(0.25f);
-        gridRoads.FindPath(0,5,0,0);
+
+        VehicleManager vm = FindObjectOfType<VehicleManager>();
+        vm.SetVehicle();
     }
     // Update is called once per frame
     void Update()

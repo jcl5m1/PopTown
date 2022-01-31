@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 3380576041433639855}
   - component: {fileID: 3380576041433639854}
   - component: {fileID: 680200779}
+  - component: {fileID: 784909247}
   m_Layer: 0
   m_Name: House
   m_TagString: Untagged
@@ -32,7 +33,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 9
+  m_RootOrder: 7
   m_LocalEulerAnglesHint: {x: -90, y: 0, z: 0}
 --- !u!33 &3380576041433639855
 MeshFilter:
@@ -98,3 +99,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gridRoads: {fileID: 0}
   type: 2
+  subType: 1
+--- !u!114 &784909247
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3380576041433639848}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22106213ff5334e8d86586b2f5c12283, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  vehiclePrefab: {fileID: 2304974776523894107, guid: 9a04a435ea8e94a668f80bf78b9953a1,
+    type: 3}
+  count: 1
